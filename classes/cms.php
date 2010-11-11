@@ -1,19 +1,18 @@
-<?php defined('SYSPATH') or die('No direct script access.');
-
+<?php
+/**
+* Kohana CMS Module
+*
+* @package Kohana CMS Module
+* @author Robert-Jan de Dreu
+* @copyright (c) 2010 Robert-Jan de Dreu
+* @license http://www.opensource.org/licenses/isc-license.txt
+*/
 class Cms {
 
 	protected $_data = array();
 	
 	protected $_menu_items = array();
 	
-	/**
-	 * Checks if the field contains any of the set values
-	 *
-	 * @param   string   value
-	 * @param   array    one array element required
-	 * @return  boolean
-	 */
-	 
 	public static function factory($data)
 	{
 		return new Cms($data);

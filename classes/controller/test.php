@@ -1,5 +1,12 @@
-<?php defined('SYSPATH') OR die('No direct access allowed.');
-
+<?php
+/**
+* Kohana CMS Module
+*
+* @package Kohana CMS Module
+* @author Robert-Jan de Dreu
+* @copyright (c) 2010 Robert-Jan de Dreu
+* @license http://www.opensource.org/licenses/isc-license.txt
+*/
 class Controller_Test extends Controller
 {
 	public $menu_json = array();
