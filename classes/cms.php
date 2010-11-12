@@ -75,7 +75,7 @@ class Cms {
 		return ($type == 'string') ? implode('/', $slug) : $slug;
 	}
 	
-	public function parents($id, $menu_array = null)
+	public function parents($id, $menu_array = array())
 	{
 		if(!$menu_array)
 		{
@@ -103,18 +103,63 @@ class Cms {
 		return false;
 	}
 	
-	public function children($parent)
+	public function children($id)
 	{
 		$array = $this->_data;
 		
-		foreach($this->path($parent, 'array') as $id)
+		foreach($this->path($id, 'array') as $child)
 		{
-			if($id)
+			if($child)
 			{
-				$array = $array[$id]['subitems'];
+				$array = $array[$child]['subitems'];
 			}
 		}
 		
 		return $array;
+	}
+	
+	public function page_id($path, $array = array())
+	{
+		$array 	= (!$array) ? $this->_data : $array;
+		$path 	= (!is_array($path)) ? explode('/', trim($path, '/')) : $path;
+		
+		$path_element = array_shift($path);
+		
+		foreach($array as $item)
+		{
+			if($item['slug'] == $path_element && !$path)
+			{
+				return $item['id'];
+			}
+			elseif($item['subitems'])
+			{
+				$stack = $this->page_id($path, $item['subitems']);
+				if($stack)
+				{
+					return $stack;
+				}
+			}
+		}
+		return false;
+	}
+	
+	//This function doesn't work on the normal array but if you set the array ID 
+	//to use the slug you will be able to use it and it will work faster.
+	public function faster_page_id($path, $array = array())
+	{
+		$array		= (!$array) ? $this->_data : $array;
+		$parents 	= explode('/', trim($path, '/'));
+		
+		$page = array_pop($parents);
+	
+		if(!empty($parents[0]))
+		{
+			foreach($parents as $parent)
+			{
+				$array = $array[$parent]['subitems'];
+			}
+		}
+		
+		return $array[$page]['id'];
 	}
 }
