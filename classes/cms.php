@@ -75,7 +75,7 @@ class Cms {
 		return ($type == 'string') ? implode('/', $slug) : $slug;
 	}
 	
-	public function parents($id, $menu_array = null, $part = 1)
+	public function parents($id, $menu_array = null)
 	{
 		if(!$menu_array)
 		{
@@ -91,7 +91,7 @@ class Cms {
 			}
 			elseif($menu_item['subitems'])
 			{
-				$found = $this->parents($id, $menu_item['subitems'], $part + 1);
+				$found = $this->parents($id, $menu_item['subitems']);
 				if($found)
 				{
 					$menu_item['subitems'] = array($found['id'] => $found);
