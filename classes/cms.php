@@ -22,7 +22,16 @@ class Cms {
 		$this->_config = Kohana::config('cms');
 		$this->_data = $data;
 	}
-	 
+	
+	/**
+	 * Generate a html menu from the data included on __construct
+	 *
+	 * @param   int			the parent id of the children that you want to use in the menu
+	 * @param   int			the depth of the menu Example: 1 shows a single level, 2 shows two levels
+	 * @param   string		the class you want to give to your menu
+	 * @param   array		the function uses this to recurse
+	 * @return  string		the generated html of the menu
+	 */
 	public function menu($parent = null, $limit = null, $class = 'menu', $array = array())
 	{
 		if($parent)
@@ -34,7 +43,7 @@ class Cms {
 			$array = $this->_data;
 		}
 		
-		$list = '<ul id="' .$class. '" class="' .$class. '">';
+		$list = '<ul class="' .$class. '">';
 		
 		foreach($array as $slug => $item)
 		{
@@ -56,6 +65,15 @@ class Cms {
 		return $list.'</ul>';
 	}
 	
+	/**
+	 * Generate a path string or array from an page id
+	 *
+	 * @param   int			the page id where you want to generate a path for
+	 * @param   string		the result you want returned eg: string, array
+	 * @param   string		the field you want returned. (this can be anything that exists within your array)
+	 * @param   array		the function uses this to recurse
+	 * @return  mixed		the path or array or the page
+	 */
 	public function path($id, $type = 'string', $field = 'id', $array = null)
 	{
 		$slug = array();
@@ -78,14 +96,21 @@ class Cms {
 		return ($type == 'string') ? implode('/', $slug) : $slug;
 	}
 	
-	public function parents($id, $menu_array = array())
+	/**
+	 * Generate a hierarchical array of all underlying parents
+	 *
+	 * @param   int			the child page you want the parent data from
+	 * @param   array		the function uses this to recurse
+	 * @return  array		the array of parents with their values sorted hierarchically
+	 */
+	public function parents($id, $array = array())
 	{
-		if(!$menu_array)
+		if(!$array)
 		{
-			$menu_array = $this->_data;
+			$array = $this->_data;
 		}
 	
-		foreach($menu_array as $menu_item)
+		foreach($array as $menu_item)
 		{
 			if($menu_item['id'] == $id)
 			{
@@ -106,6 +131,12 @@ class Cms {
 		return false;
 	}
 	
+	/**
+	 * Generate a array from all children from this item
+	 *
+	 * @param   int			the page id where you want to generate the array of children for
+	 * @return  array		the array of all children
+	 */
 	public function children($id)
 	{
 		$array = $this->_data;
@@ -121,6 +152,13 @@ class Cms {
 		return ($array) ? $array : array();
 	}
 	
+	/**
+	 * Get the page id from a path
+	 *
+	 * @param   string		the path from the page
+	 * @param   array		the function uses this to recurse
+	 * @return  int			the page id
+	 */
 	public function page_id($path, $array = array())
 	{
 		$array 	= (!$array) ? $this->_data : $array;
@@ -146,8 +184,16 @@ class Cms {
 		return false;
 	}
 	
-	// This function doesn't work on the normal array but if you set
-	// the array ID to use the slug you will be able to use it.
+	/**
+	 * Get the page id from a path a bit faster than the previous function
+	 *
+	 * note: 	This function doesn't work on the normal array but if you set
+	 * 			the array ID to use the slug you will be able to use it.
+	 *
+	 * @param   string		the path from the page
+	 * @param   array		the function uses this to recurse
+	 * @return  int			the page id
+	 */
 	public function faster_page_id($path, $array = array())
 	{
 		$array		= (!$array) ? $this->_data : $array;
@@ -166,6 +212,13 @@ class Cms {
 		return $array[$page]['id'];
 	}
 	
+	/**
+	 * Get the page id from a path part
+	 *
+	 * @param   int		the part of the url you want to get the id for 
+	 *					(Path: one/two/tree, 1 will get the id from one. 2 will get the id from two ...etc)
+	 * @return  int		the page id
+	 */
 	public function path_part_id($part)
 	{
 		$path = explode('/', trim(request::instance()->uri(), '/'));
