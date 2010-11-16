@@ -176,20 +176,3 @@ class Cms {
 		return $this->page_id(implode('/', array_slice($path, 0, $part)));
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
