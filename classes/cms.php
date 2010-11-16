@@ -11,8 +11,6 @@ class Cms {
 
 	protected $_data = array();
 	
-	protected $_menu_items = array();
-	
 	public static function factory($data)
 	{
 		return new Cms($data);
@@ -21,20 +19,24 @@ class Cms {
 	public function __construct($data)
 	{
 		$this->_data = $data;
-		$this->_menu_items = $data;
 	}
 	 
-	public function menu($parent = null, $limit = null, $class = 'menu')
+	public function menu($parent = null, $limit = null, $class = 'menu', $array = array())
 	{
 		if($parent)
 		{
-			$this->_menu_items = $this->children($parent);
+			$array = $this->children($parent);
+		}
+		elseif(!$array)
+		{
+			$array = $this->_data;
 		}
 		
 		$list = '<ul id="' .$class. '" class="' .$class. '">';
 		
-		foreach($this->_menu_items as $slug => $item)
+		foreach($array as $slug => $item)
 		{
+		
 			$path = $this->path($item['id'], 'string', 'slug');
 			$current = trim(request::instance()->uri(), '/');
 			
@@ -43,8 +45,7 @@ class Cms {
 			
 			if($item['subitems'] && ($limit == null OR $limit > 1))
 			{
-				$this->_menu_items = $item['subitems'];
-				$list .= $this->menu(null, (($limit != null) ? $limit - 1 : $limit), $class);
+				$list .= $this->menu(null, (($limit != null) ? $limit - 1 : $limit), $class, $item['subitems']);
 			}
 			
 			$parent_slug = null;
@@ -115,7 +116,7 @@ class Cms {
 			}
 		}
 		
-		return $array;
+		return ($array) ? $array : array();
 	}
 	
 	public function page_id($path, $array = array())
@@ -143,8 +144,8 @@ class Cms {
 		return false;
 	}
 	
-	//This function doesn't work on the normal array but if you set the array ID 
-	//to use the slug you will be able to use it and it will work faster.
+	// This function doesn't work on the normal array but if you set
+	// the array ID to use the slug you will be able to use it.
 	public function faster_page_id($path, $array = array())
 	{
 		$array		= (!$array) ? $this->_data : $array;
@@ -162,4 +163,33 @@ class Cms {
 		
 		return $array[$page]['id'];
 	}
+	
+	public function path_part_id($part)
+	{
+		$path = explode('/', trim(request::instance()->uri(), '/'));
+		
+		if(!isset($path[$part - 1]))
+		{
+			return null;
+		}
+		
+		return $this->page_id(implode('/', array_slice($path, 0, $part)));
+	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
