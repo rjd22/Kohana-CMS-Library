@@ -9,6 +9,7 @@
 */
 class Cms {
 
+	protected $_config = array();
 	protected $_data = array();
 	
 	public static function factory($data)
@@ -18,6 +19,7 @@ class Cms {
 	
 	public function __construct($data)
 	{
+		$this->_config = Kohana::config('cms');
 		$this->_data = $data;
 	}
 	 
@@ -37,15 +39,15 @@ class Cms {
 		foreach($array as $slug => $item)
 		{
 		
-			$path = $this->path($item['id'], 'string', 'slug');
+			$path = $this->path($item['id'], 'string', $this->_config['slug']);
 			$current = trim(request::instance()->uri(), '/');
 			
 			$active = ($current == $path) ? 'class="active"' : '';
-			$list .= '<li><a '.$active.' href="'. url::base() . $path . '">' . $item['title'] . '</a></li>';
+			$list .= '<li><a '.$active.' href="'. url::base() . $path . '">' . $item[$this->_config['title']] . '</a></li>';
 			
-			if($item['subitems'] && ($limit == null OR $limit > 1))
+			if($item[$this->_config['subitem']] && ($limit == null OR $limit > 1))
 			{
-				$list .= $this->menu(null, (($limit != null) ? $limit - 1 : $limit), $class, $item['subitems']);
+				$list .= $this->menu(null, (($limit != null) ? $limit - 1 : $limit), $class, $item[$this->_config['subitem']]);
 			}
 			
 			$parent_slug = null;
@@ -67,9 +69,9 @@ class Cms {
 		{
 			$slug[] = $value[$field];
 			
-			if(isset($value['subitems']) && $value['subitems'])
+			if(isset($value[$this->_config['subitem']]) && $value[$this->_config['subitem']])
 			{
-				$slug = array_merge($slug, $this->path($id, 'array', $field, $value['subitems']));
+				$slug = array_merge($slug, $this->path($id, 'array', $field, $value[$this->_config['subitem']]));
 			}
 		}
 		
@@ -87,15 +89,15 @@ class Cms {
 		{
 			if($menu_item['id'] == $id)
 			{
-				$menu_item['subitems'] = array();
+				$menu_item[$this->_config['subitem']] = array();
 				return $menu_item;
 			}
-			elseif($menu_item['subitems'])
+			elseif($menu_item[$this->_config['subitem']])
 			{
-				$found = $this->parents($id, $menu_item['subitems']);
+				$found = $this->parents($id, $menu_item[$this->_config['subitem']]);
 				if($found)
 				{
-					$menu_item['subitems'] = array($found['id'] => $found);
+					$menu_item[$this->_config['subitem']] = array($found['id'] => $found);
 					return $menu_item;
 				}
 			}
@@ -112,7 +114,7 @@ class Cms {
 		{
 			if($child)
 			{
-				$array = $array[$child]['subitems'];
+				$array = $array[$child][$this->_config['subitem']];
 			}
 		}
 		
@@ -128,13 +130,13 @@ class Cms {
 		
 		foreach($array as $item)
 		{
-			if($item['slug'] == $path_element && !$path)
+			if($item[$this->_config['slug']] == $path_element && !$path)
 			{
 				return $item['id'];
 			}
-			elseif($item['subitems'])
+			elseif($item[$this->_config['subitem']])
 			{
-				$stack = $this->page_id($path, $item['subitems']);
+				$stack = $this->page_id($path, $item[$this->_config['subitem']]);
 				if($stack)
 				{
 					return $stack;
@@ -157,7 +159,7 @@ class Cms {
 		{
 			foreach($parents as $parent)
 			{
-				$array = $array[$parent]['subitems'];
+				$array = $array[$parent][$this->_config['subitem']];
 			}
 		}
 		
