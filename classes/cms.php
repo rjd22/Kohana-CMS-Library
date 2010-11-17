@@ -66,9 +66,37 @@ class Cms {
 	}
 	
 	/**
+	 * Get the breadcrumbs from a page
+	 *
+	 * @param   int	the page id
+	 * @return  mixed	you can return it as a array or a string
+	 */
+	public function breadcrumbs($id, $seperator = ' &raquo; ', $type = 'string', $array = null)
+	{
+		$slug = array();
+	
+		if(!$array)
+		{
+			$array = array($this->parents($id, $this->_data));
+		}
+		
+		foreach($array as $key => $value)
+		{
+			$slug[] = '<a href="'.url::base().$this->path($value['id'], 'string', 'slug').'">'.$value['title'].'</a>';
+			
+			if(isset($value[$this->_config['subitem']]) && $value[$this->_config['subitem']])
+			{
+				$slug = array_merge($slug, $this->breadcrumbs($id, $seperator, 'array', $value[$this->_config['subitem']]));
+			}
+		}
+		
+		return ($type == 'string') ? implode($seperator, $slug) : $slug;
+	}
+	
+	/**
 	 * Generate a path string or array from an page id
 	 *
-	 * @param   int			the page id where you want to generate a path for
+	 * @param   int		the page id where you want to generate a path for
 	 * @param   string		the result you want returned eg: string, array
 	 * @param   string		the field you want returned. (this can be anything that exists within your array)
 	 * @param   array		the function uses this to recurse
@@ -219,9 +247,12 @@ class Cms {
 	 *					(Path: one/two/tree, 1 will get the id from one. 2 will get the id from two ...etc)
 	 * @return  int		the page id
 	 */
-	public function path_part_id($part)
+	public function path_part_id($part, $path = null)
 	{
-		$path = explode('/', trim(request::instance()->uri(), '/'));
+		if(!$path)
+		{
+			$path = explode('/', trim(request::instance()->uri(), '/'));
+		}
 		
 		if(!isset($path[$part - 1]))
 		{
