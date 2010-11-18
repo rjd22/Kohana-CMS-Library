@@ -10,6 +10,7 @@
 class Cms {
 
 	protected $_config = array();
+	protected $_fields = array();
 	protected $_data = array();
 	
 	public static function factory($data)
@@ -20,20 +21,28 @@ class Cms {
 	public function __construct($data)
 	{
 		$this->_config = Kohana::config('cms');
+		$this->_fields = Kohana::config('cms.fields');
 		$this->_data = $data;
 	}
 	
 	/**
 	 * Generate a html menu from the data included on __construct
 	 *
-	 * @param   int			the parent id of the children that you want to use in the menu
-	 * @param   int			the depth of the menu Example: 1 shows a single level, 2 shows two levels
+	 * @param   int		the parent id of the children that you want to use in the menu
+	 * @param   int		the depth of the menu Example: 1 shows a single level, 2 shows two levels
 	 * @param   string		the class you want to give to your menu
 	 * @param   array		the function uses this to recurse
 	 * @return  string		the generated html of the menu
 	 */
 	public function menu($parent = null, $limit = null, $class = 'menu', $array = array())
-	{
+	{	
+		$cache = $this->get_cache('menu_'.$parent.'_'.$limit.'_'.$class);
+	
+		if($cache)
+		{
+			return $cache;
+		}
+	
 		if($parent)
 		{
 			$array = $this->children($parent);
@@ -48,31 +57,45 @@ class Cms {
 		foreach($array as $slug => $item)
 		{
 		
-			$path = $this->path($item['id'], 'string', $this->_config['slug']);
+			$path = $this->path($item['id'], 'string', $this->_fields['slug']);
 			$current = trim(request::instance()->uri(), '/');
 			
 			$active = ($current == $path) ? 'class="active"' : '';
-			$list .= '<li><a '.$active.' href="'. url::base() . $path . '">' . $item[$this->_config['title']] . '</a></li>';
+			$list .= '<li><a '.$active.' href="'. url::base() . $path . '">' . $item[$this->_fields['title']] . '</a></li>';
 			
-			if($item[$this->_config['subitem']] && ($limit == null OR $limit > 1))
+			if($item[$this->_fields['subitem']] && ($limit == null OR $limit > 1))
 			{
-				$list .= $this->menu(null, (($limit != null) ? $limit - 1 : $limit), $class, $item[$this->_config['subitem']]);
+				$list .= $this->menu(null, (($limit != null) ? $limit - 1 : $limit), $class, $item[$this->_fields['subitem']]);
 			}
 			
 			$parent_slug = null;
 		}
 		
-		return $list.'</ul>';
+		$menu = $list.'</ul>';
+		
+		$this->cache('menu_'.$parent.'_'.$limit.'_'.$class, $menu, 3600);
+		
+		return $menu;
 	}
 	
 	/**
 	 * Get the breadcrumbs from a page
 	 *
 	 * @param   int	the page id
+	 * @param   string	the seperator charachter you want to use in between the urls
+	 * @param   string	the result you want returned eg: string, array
+	 * @param   array		the function uses this to recurse
 	 * @return  mixed	you can return it as a array or a string
 	 */
 	public function breadcrumbs($id, $seperator = ' &raquo; ', $type = 'string', $array = null)
 	{
+		$cache = $this->get_cache('breadcumbs_'.$id.'_'.md5($seperator).'_'.$type);
+	
+		if($cache)
+		{
+			return $cache;
+		}
+	
 		$slug = array();
 	
 		if(!$array)
@@ -84,13 +107,17 @@ class Cms {
 		{
 			$slug[] = '<a href="'.url::base().$this->path($value['id'], 'string', 'slug').'">'.$value['title'].'</a>';
 			
-			if(isset($value[$this->_config['subitem']]) && $value[$this->_config['subitem']])
+			if(isset($value[$this->_fields['subitem']]) && $value[$this->_fields['subitem']])
 			{
-				$slug = array_merge($slug, $this->breadcrumbs($id, $seperator, 'array', $value[$this->_config['subitem']]));
+				$slug = array_merge($slug, $this->breadcrumbs($id, $seperator, 'array', $value[$this->_fields['subitem']]));
 			}
 		}
 		
-		return ($type == 'string') ? implode($seperator, $slug) : $slug;
+		$breadcrumbs = ($type == 'string') ? implode($seperator, $slug) : $slug;
+		
+		$this->cache('breadcumbs_'.$id.'_'.md5($seperator).'_'.$type, $breadcrumbs, 3600);
+		
+		return $breadcrumbs;
 	}
 	
 	/**
@@ -115,9 +142,9 @@ class Cms {
 		{
 			$slug[] = $value[$field];
 			
-			if(isset($value[$this->_config['subitem']]) && $value[$this->_config['subitem']])
+			if(isset($value[$this->_fields['subitem']]) && $value[$this->_fields['subitem']])
 			{
-				$slug = array_merge($slug, $this->path($id, 'array', $field, $value[$this->_config['subitem']]));
+				$slug = array_merge($slug, $this->path($id, 'array', $field, $value[$this->_fields['subitem']]));
 			}
 		}
 		
@@ -142,15 +169,15 @@ class Cms {
 		{
 			if($menu_item['id'] == $id)
 			{
-				$menu_item[$this->_config['subitem']] = array();
+				$menu_item[$this->_fields['subitem']] = array();
 				return $menu_item;
 			}
-			elseif($menu_item[$this->_config['subitem']])
+			elseif($menu_item[$this->_fields['subitem']])
 			{
-				$found = $this->parents($id, $menu_item[$this->_config['subitem']]);
+				$found = $this->parents($id, $menu_item[$this->_fields['subitem']]);
 				if($found)
 				{
-					$menu_item[$this->_config['subitem']] = array($found['id'] => $found);
+					$menu_item[$this->_fields['subitem']] = array($found['id'] => $found);
 					return $menu_item;
 				}
 			}
@@ -173,7 +200,7 @@ class Cms {
 		{
 			if($child)
 			{
-				$array = $array[$child][$this->_config['subitem']];
+				$array = $array[$child][$this->_fields['subitem']];
 			}
 		}
 		
@@ -196,13 +223,13 @@ class Cms {
 		
 		foreach($array as $item)
 		{
-			if($item[$this->_config['slug']] == $path_element && !$path)
+			if($item[$this->_fields['slug']] == $path_element && !$path)
 			{
 				return $item['id'];
 			}
-			elseif($item[$this->_config['subitem']])
+			elseif($item[$this->_fields['subitem']])
 			{
-				$stack = $this->page_id($path, $item[$this->_config['subitem']]);
+				$stack = $this->page_id($path, $item[$this->_fields['subitem']]);
 				if($stack)
 				{
 					return $stack;
@@ -233,7 +260,7 @@ class Cms {
 		{
 			foreach($parents as $parent)
 			{
-				$array = $array[$parent][$this->_config['subitem']];
+				$array = $array[$parent][$this->_fields['subitem']];
 			}
 		}
 		
@@ -260,5 +287,39 @@ class Cms {
 		}
 		
 		return $this->page_id(implode('/', array_slice($path, 0, $part)));
+	}
+	
+	/**
+	 * Cache save item
+	 *
+	 * @param   string		the id of the cache item
+	 * @param   string		the data of the cache item
+	 * @param   int		the time to save the cache item in seconds
+	 * @return  bool		cache saved or not
+	 */
+	public function cache($id, $data, $time)
+	{
+		if(!$this->_config['cache'])
+		{
+			return false;
+		}
+		
+		return cache::instance()->set($id, $data, $time);
+	}
+	
+	/**
+	 * Cache get item
+	 *
+	 * @param   string		the id of the cache item
+	 * @return  mixed		the cache item data or false
+	 */
+	public function get_cache($id)
+	{
+		if(!$this->_config['cache'])
+		{
+			return false;
+		}
+	
+		return cache::instance()->get($id);
 	}
 }

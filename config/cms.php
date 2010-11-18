@@ -9,7 +9,10 @@ return array
 	 * string   slug		menu link slug field name in your database
 	 * string   subitem  	array field name where all subitems are stored
 	 */
-	'title' 	=> 'title',
-	'slug' 		=> 'slug',
-	'subitem' 	=> 'subitems'
+	'fields' => array(
+		'title' 		=> 'title',
+		'slug' 		=> 'slug',
+		'subitem' 	=> 'subitems',
+	),
+	'cache' 		=> 0
 );
